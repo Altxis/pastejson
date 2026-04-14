@@ -49,3 +49,9 @@
 .tok-punctuation {
   color: var(--text);
 }
+
+.raw-view__truncated {
+  color: var(--json-bool);
+  opacity: 0.7;
+  font-style: italic;
+}

@@ -38,7 +38,7 @@
 
 .table-view__scroll {
   overflow: auto;
-  max-height: 70vh;
+  height: 70vh;
 }
 
 .table-view__table {

@@ -1,0 +1,112 @@
+.table-view {
+  background: var(--bg);
+}
+
+.table-view__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.table-view__filter {
+  flex: 1;
+  max-width: 320px;
+  padding: 5px 10px;
+  font-size: 13px;
+  font-family: var(--mono);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--code-bg);
+  color: var(--text-h);
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: var(--accent);
+  }
+}
+
+.table-view__count {
+  font-size: 11px;
+  font-family: var(--mono);
+  color: var(--text);
+  opacity: 0.55;
+  margin-left: auto;
+}
+
+.table-view__scroll {
+  overflow: auto;
+  max-height: 70vh;
+}
+
+.table-view__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  font-family: var(--mono);
+}
+
+.table-view__table thead th {
+  text-align: left;
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+}
+
+.table-view__table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background 0.1s;
+
+  &:last-child { border-bottom: none; }
+  &:hover { background: var(--code-bg); }
+}
+
+.table-view__table td {
+  padding: 7px 12px;
+  vertical-align: middle;
+}
+
+.col-path {
+  color: var(--json-key);
+  white-space: nowrap;
+}
+
+.col-value {
+  color: var(--text-h);
+  word-break: break-all;
+}
+
+.col-copy {
+  width: 64px;
+  text-align: right;
+  opacity: 0;
+  transition: opacity 0.1s;
+}
+
+.table-view__table tr:hover .col-copy {
+  opacity: 1;
+}
+
+.type-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.type-string  { color: var(--json-string); background: color-mix(in srgb, var(--json-string) 12%, transparent); }
+.type-number  { color: var(--json-number); background: color-mix(in srgb, var(--json-number) 12%, transparent); }
+.type-boolean { color: var(--json-bool);   background: color-mix(in srgb, var(--json-bool) 12%, transparent); }
+.type-null    { color: var(--text);        background: var(--code-bg); }

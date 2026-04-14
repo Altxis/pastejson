@@ -1,0 +1,74 @@
+.tree-view {
+  padding: 12px 0;
+  background: var(--code-bg);
+  overflow: auto;
+  max-height: 70vh;
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* Each node sets --depth on itself; rows read it */
+.tree-node__row {
+  display: flex;
+  align-items: baseline;
+  gap: 2px;
+  padding: 1px 16px;
+  padding-left: calc(var(--depth, 0) * 1.4rem + 16px);
+  cursor: pointer;
+  user-select: none;
+  outline: none;
+  transition: background 0.08s;
+
+  &:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
+  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+}
+
+.tree-node--leaf .tree-node__row {
+  cursor: default;
+  &:hover { background: transparent; }
+}
+
+.tree-node__close {
+  padding: 1px 16px;
+  padding-left: calc(var(--depth, 0) * 1.4rem + 16px);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.tree__arrow {
+  display: inline-block;
+  font-size: 8px;
+  color: var(--text);
+  opacity: 0.35;
+  width: 14px;
+  flex-shrink: 0;
+  transition: transform 0.15s;
+}
+
+.tree__arrow--open {
+  transform: rotate(90deg);
+}
+
+.tree-node--leaf .tree__arrow {
+  visibility: hidden;
+}
+
+.tree__key { color: var(--json-key); }
+.tree__colon { color: var(--text); opacity: 0.4; margin-right: 2px; }
+.tree__brace { color: var(--text); }
+
+.tree__preview {
+  color: var(--text);
+  opacity: 0.35;
+  font-size: 11px;
+  margin: 0 4px;
+}
+
+/* Value token colors (shared with RawView via index.css vars) */
+.tok-key     { color: var(--json-key); }
+.tok-string  { color: var(--json-string); }
+.tok-number  { color: var(--json-number); }
+.tok-boolean { color: var(--json-bool); }
+.tok-null    { color: var(--json-null); opacity: 0.5; }

@@ -4,7 +4,8 @@
   "scripts": {
     "dev": "concurrently --names client,server --prefix-colors cyan,yellow \"npm run dev --prefix client\" \"npm run start:dev --prefix server\"",
     "build": "npm run build --prefix client && npm run build --prefix server",
-    "install:all": "npm install && npm install --prefix client && npm install --prefix server"
+    "install:all": "npm install && npm install --prefix client && npm install --prefix server",
+    "start": "node server/dist/main"
   },
   "engines": {
     "node": ">=22.12.0"

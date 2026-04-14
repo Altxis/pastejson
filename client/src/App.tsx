@@ -1,121 +1,67 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
-import heroImg from './assets/hero.png'
+import JsonInput from './components/JsonInput'
+import ViewTabs from './components/ViewTabs'
+import TreeView from './components/TreeView'
+import TableView from './components/TableView'
+import RawView from './components/RawView'
+import GraphView from './components/GraphView'
+import ErrorBanner from './components/ErrorBanner'
 import './App.css'
 
-function App() {
-  const [count, setCount] = useState(0)
+type View = 'tree' | 'table' | 'raw' | 'graph'
+
+type ParseState =
+  | { status: 'empty' }
+  | { status: 'error'; message: string }
+  | { status: 'ok'; value: unknown; raw: string }
+
+export default function App() {
+  const [view, setView] = useState<View>('tree')
+  const [parseState, setParseState] = useState<ParseState>({ status: 'empty' })
+
+  function handleParse(raw: string) {
+    if (!raw.trim()) {
+      setParseState({ status: 'empty' })
+      return
+    }
+    try {
+      const value = JSON.parse(raw)
+      setParseState({ status: 'ok', value, raw: JSON.stringify(value, null, 2) })
+    } catch (e) {
+      setParseState({ status: 'error', message: (e as Error).message })
+    }
+  }
 
   return (
-    <>
-      <section id="center">
-        <div className="hero">
-          <img src={heroImg} className="base" width="170" height="179" alt="" />
-          <img src={reactLogo} className="framework" alt="React logo" />
-          <img src={viteLogo} className="vite" alt="Vite logo" />
-        </div>
-        <div>
-          <h1>Get started</h1>
-          <p>
-            Edit <code>src/App.tsx</code> and save to test <code>HMR</code>
-          </p>
-        </div>
-        <button
-          className="counter"
-          onClick={() => setCount((count) => count + 1)}
-        >
-          Count is {count}
-        </button>
-      </section>
+    <div className="app">
+      <header className="app-header">
+        <h1>paste<span className="accent">json</span></h1>
+        <p className="app-tagline">Paste or drop a .json file — see something beautiful.</p>
+      </header>
 
-      <div className="ticks"></div>
+      <JsonInput onParse={handleParse} />
 
-      <section id="next-steps">
-        <div id="docs">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#documentation-icon"></use>
-          </svg>
-          <h2>Documentation</h2>
-          <p>Your questions, answered</p>
-          <ul>
-            <li>
-              <a href="https://vite.dev/" target="_blank">
-                <img className="logo" src={viteLogo} alt="" />
-                Explore Vite
-              </a>
-            </li>
-            <li>
-              <a href="https://react.dev/" target="_blank">
-                <img className="button-icon" src={reactLogo} alt="" />
-                Learn more
-              </a>
-            </li>
-          </ul>
-        </div>
-        <div id="social">
-          <svg className="icon" role="presentation" aria-hidden="true">
-            <use href="/icons.svg#social-icon"></use>
-          </svg>
-          <h2>Connect with us</h2>
-          <p>Join the Vite community</p>
-          <ul>
-            <li>
-              <a href="https://github.com/vitejs/vite" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#github-icon"></use>
-                </svg>
-                GitHub
-              </a>
-            </li>
-            <li>
-              <a href="https://chat.vite.dev/" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#discord-icon"></use>
-                </svg>
-                Discord
-              </a>
-            </li>
-            <li>
-              <a href="https://x.com/vite_js" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#x-icon"></use>
-                </svg>
-                X.com
-              </a>
-            </li>
-            <li>
-              <a href="https://bsky.app/profile/vite.dev" target="_blank">
-                <svg
-                  className="button-icon"
-                  role="presentation"
-                  aria-hidden="true"
-                >
-                  <use href="/icons.svg#bluesky-icon"></use>
-                </svg>
-                Bluesky
-              </a>
-            </li>
-          </ul>
-        </div>
-      </section>
+      {parseState.status === 'error' && (
+        <ErrorBanner message={parseState.message} />
+      )}
 
-      <div className="ticks"></div>
-      <section id="spacer"></section>
-    </>
+      {parseState.status === 'ok' && (
+        <div className="viewer">
+          <ViewTabs active={view} onChange={setView} />
+          <div className="view-content" key={view}>
+            {view === 'tree'  && <TreeView value={parseState.value} />}
+            {view === 'table' && <TableView value={parseState.value} />}
+            {view === 'raw'   && <RawView raw={parseState.raw} />}
+            {view === 'graph' && <GraphView value={parseState.value} />}
+          </div>
+        </div>
+      )}
+
+      {parseState.status === 'empty' && (
+        <div className="app-empty">
+          <p>Supports objects, arrays, strings, numbers, booleans and null.</p>
+        </div>
+      )}
+    </div>
   )
 }
-
-export default App

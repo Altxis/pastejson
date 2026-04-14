@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm create:*)",
+      "Bash(npx @nestjs/cli new server --package-manager npm --skip-git --strict)",
+      "Bash(npm install:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(nvm ls-remote:*)",
+      "Bash(nvm install:*)",
+      "Bash(nvm ls:*)"
+    ]
+  }
+}

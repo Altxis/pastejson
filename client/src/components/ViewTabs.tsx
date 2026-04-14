@@ -1,18 +1,18 @@
-import './ViewTabs.css'
+import "./ViewTabs.css";
 
-type View = 'tree' | 'table' | 'raw' | 'graph'
+type View = "tree" | "table" | "raw" | "graph";
 
 interface Props {
-  active: View
-  onChange: (v: View) => void
+  active: View;
+  onChange: (v: View) => void;
 }
 
 const TABS: { id: View; label: string }[] = [
-  { id: 'tree',  label: 'Tree' },
-  { id: 'table', label: 'Table' },
-  { id: 'raw',   label: 'Raw' },
-  { id: 'graph', label: 'Graph' },
-]
+  { id: "tree", label: "Tree" },
+  { id: "table", label: "Table" },
+  { id: "raw", label: "Raw" },
+  { id: "graph", label: "Graph" },
+];
 
 export default function ViewTabs({ active, onChange }: Props) {
   return (
@@ -29,5 +29,5 @@ export default function ViewTabs({ active, onChange }: Props) {
         </button>
       ))}
     </nav>
-  )
+  );
 }

@@ -30,9 +30,22 @@
 }
 
 /* Token colors — vars defined in index.css */
-.tok-key         { color: var(--json-key); }
-.tok-string      { color: var(--json-string); }
-.tok-number      { color: var(--json-number); }
-.tok-boolean     { color: var(--json-bool); }
-.tok-null        { color: var(--json-null); opacity: 0.5; }
-.tok-punctuation { color: var(--text); }
+.tok-key {
+  color: var(--json-key);
+}
+.tok-string {
+  color: var(--json-string);
+}
+.tok-number {
+  color: var(--json-number);
+}
+.tok-boolean {
+  color: var(--json-bool);
+}
+.tok-null {
+  color: var(--json-null);
+  opacity: 0.5;
+}
+.tok-punctuation {
+  color: var(--text);
+}

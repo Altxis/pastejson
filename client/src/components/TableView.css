@@ -66,8 +66,12 @@
   border-bottom: 1px solid var(--border);
   transition: background 0.1s;
 
-  &:last-child { border-bottom: none; }
-  &:hover { background: var(--code-bg); }
+  &:last-child {
+    border-bottom: none;
+  }
+  &:hover {
+    background: var(--code-bg);
+  }
 }
 
 .table-view__table td {
@@ -106,7 +110,19 @@
   letter-spacing: 0.04em;
 }
 
-.type-string  { color: var(--json-string); background: color-mix(in srgb, var(--json-string) 12%, transparent); }
-.type-number  { color: var(--json-number); background: color-mix(in srgb, var(--json-number) 12%, transparent); }
-.type-boolean { color: var(--json-bool);   background: color-mix(in srgb, var(--json-bool) 12%, transparent); }
-.type-null    { color: var(--text);        background: var(--code-bg); }
+.type-string {
+  color: var(--json-string);
+  background: color-mix(in srgb, var(--json-string) 12%, transparent);
+}
+.type-number {
+  color: var(--json-number);
+  background: color-mix(in srgb, var(--json-number) 12%, transparent);
+}
+.type-boolean {
+  color: var(--json-bool);
+  background: color-mix(in srgb, var(--json-bool) 12%, transparent);
+}
+.type-null {
+  color: var(--text);
+  background: var(--code-bg);
+}

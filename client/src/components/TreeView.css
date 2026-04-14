@@ -20,13 +20,20 @@
   outline: none;
   transition: background 0.08s;
 
-  &:hover { background: color-mix(in srgb, var(--accent) 6%, transparent); }
-  &:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+  &:hover {
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: -2px;
+  }
 }
 
 .tree-node--leaf .tree-node__row {
   cursor: default;
-  &:hover { background: transparent; }
+  &:hover {
+    background: transparent;
+  }
 }
 
 .tree-node__close {
@@ -55,9 +62,17 @@
   visibility: hidden;
 }
 
-.tree__key { color: var(--json-key); }
-.tree__colon { color: var(--text); opacity: 0.4; margin-right: 2px; }
-.tree__brace { color: var(--text); }
+.tree__key {
+  color: var(--json-key);
+}
+.tree__colon {
+  color: var(--text);
+  opacity: 0.4;
+  margin-right: 2px;
+}
+.tree__brace {
+  color: var(--text);
+}
 
 .tree__preview {
   color: var(--text);
@@ -67,8 +82,19 @@
 }
 
 /* Value token colors (shared with RawView via index.css vars) */
-.tok-key     { color: var(--json-key); }
-.tok-string  { color: var(--json-string); }
-.tok-number  { color: var(--json-number); }
-.tok-boolean { color: var(--json-bool); }
-.tok-null    { color: var(--json-null); opacity: 0.5; }
+.tok-key {
+  color: var(--json-key);
+}
+.tok-string {
+  color: var(--json-string);
+}
+.tok-number {
+  color: var(--json-number);
+}
+.tok-boolean {
+  color: var(--json-bool);
+}
+.tok-null {
+  color: var(--json-null);
+  opacity: 0.5;
+}

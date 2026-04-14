@@ -1,24 +1,24 @@
-import { useState } from 'react'
-import { flatten } from '../utils/flatten'
-import CopyButton from './CopyButton'
-import './TableView.css'
+import { useState } from "react";
+import { flatten } from "../utils/flatten";
+import CopyButton from "./CopyButton";
+import "./TableView.css";
 
 interface Props {
-  value: unknown
+  value: unknown;
 }
 
 function typeName(v: unknown): string {
-  if (v === null) return 'null'
-  if (Array.isArray(v)) return 'array'
-  return typeof v
+  if (v === null) return "null";
+  if (Array.isArray(v)) return "array";
+  return typeof v;
 }
 
 export default function TableView({ value }: Props) {
-  const [filter, setFilter] = useState('')
-  const rows = flatten(value)
+  const [filter, setFilter] = useState("");
+  const rows = flatten(value);
   const filtered = filter
     ? rows.filter(([path]) => path.toLowerCase().includes(filter.toLowerCase()))
-    : rows
+    : rows;
 
   return (
     <div className="table-view">
@@ -47,7 +47,9 @@ export default function TableView({ value }: Props) {
               <tr key={i}>
                 <td className="col-path">{path}</td>
                 <td className="col-type">
-                  <span className={`type-badge type-${typeName(val)}`}>{typeName(val)}</span>
+                  <span className={`type-badge type-${typeName(val)}`}>
+                    {typeName(val)}
+                  </span>
                 </td>
                 <td className="col-value">{String(val)}</td>
                 <td className="col-copy">
@@ -59,5 +61,5 @@ export default function TableView({ value }: Props) {
         </table>
       </div>
     </div>
-  )
+  );
 }

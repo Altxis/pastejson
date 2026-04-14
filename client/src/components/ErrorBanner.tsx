@@ -1,5 +1,5 @@
 interface Props {
-  message: string
+  message: string;
 }
 
 export default function ErrorBanner({ message }: Props) {
@@ -7,14 +7,14 @@ export default function ErrorBanner({ message }: Props) {
     <div
       role="alert"
       style={{
-        marginTop: '16px',
-        padding: '12px 16px',
-        background: 'var(--accent-bg)',
-        border: '1px solid var(--accent-border)',
-        borderRadius: '8px',
-        fontFamily: 'var(--mono)',
-        fontSize: '13px',
-        color: 'var(--accent)',
+        marginTop: "16px",
+        padding: "12px 16px",
+        background: "var(--accent-bg)",
+        border: "1px solid var(--accent-border)",
+        borderRadius: "8px",
+        fontFamily: "var(--mono)",
+        fontSize: "13px",
+        color: "var(--accent)",
         lineHeight: 1.6,
       }}
     >
@@ -22,5 +22,5 @@ export default function ErrorBanner({ message }: Props) {
       <br />
       {message}
     </div>
-  )
+  );
 }

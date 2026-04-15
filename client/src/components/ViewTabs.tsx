@@ -1,6 +1,5 @@
+import type { View } from "../types";
 import "./ViewTabs.css";
-
-type View = "tree" | "table" | "raw" | "graph";
 
 interface Props {
   active: View;

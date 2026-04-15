@@ -81,36 +81,46 @@
   margin: 0 4px;
 }
 
-/* Value token colors (shared with RawView via index.css vars) */
-.tok-key {
-  color: var(--json-key);
-}
-.tok-string {
-  color: var(--json-string);
-}
-.tok-number {
-  color: var(--json-number);
-}
-.tok-boolean {
-  color: var(--json-bool);
-}
-.tok-null {
-  color: var(--json-null);
-  opacity: 0.5;
-}
-
-.tree-node__show-more {
+.tree-node__load-more {
   padding: 1px 16px;
   padding-left: calc(var(--depth, 0) * 1.4rem + 16px + 14px);
   font-size: 11px;
+  line-height: 1.7;
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  flex-wrap: wrap;
+}
+
+.tree-node__load-chunk {
   color: var(--accent);
-  opacity: 0.7;
+  opacity: 0.8;
+  cursor: pointer;
+  outline: none;
+  border-radius: 3px;
+
+  &:hover { opacity: 1; text-decoration: underline; }
+  &:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+}
+
+.tree-node__show-all {
+  color: var(--accent);
+  opacity: 0.5;
   cursor: pointer;
   outline: none;
 
-  &:hover { opacity: 1; }
+  &:hover { opacity: 0.9; text-decoration: underline; }
   &:focus-visible {
     outline: 2px solid var(--accent);
-    outline-offset: -2px;
+    outline-offset: 1px;
   }
+}
+
+.tree-node__hidden-count {
+  color: var(--text);
+  opacity: 0.35;
+  font-size: 10px;
 }

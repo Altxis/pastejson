@@ -26,6 +26,7 @@ pnpm-debug.log*
 .DS_Store
 .vscode/
 .idea/
+.claude/settings.local.json
 *.swp
 *.swo
 Thumbs.db
@@ -35,3 +36,7 @@ server/build/
 
 # Vite
 client/.vite/
+
+# Local test JSON files (too large for the repo / build servers)
+cpe_*.json
+client/public/cpe_*.json

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import "./CopyButton.css";
 
 interface Props {
   text: string;
@@ -19,19 +20,7 @@ export default function CopyButton({ text, title = "Copy" }: Props) {
       type="button"
       title={title}
       onClick={handleClick}
-      style={{
-        background: "transparent",
-        border: "1px solid var(--border)",
-        borderRadius: "4px",
-        padding: "3px 8px",
-        fontSize: "11px",
-        fontFamily: "var(--mono)",
-        color: copied ? "var(--accent)" : "var(--text)",
-        borderColor: copied ? "var(--accent-border)" : "var(--border)",
-        cursor: "pointer",
-        transition: "color 0.15s, border-color 0.15s",
-        flexShrink: 0,
-      }}
+      className={`copy-btn${copied ? " copy-btn--copied" : ""}`}
     >
       {copied ? "Copied!" : "Copy"}
     </button>

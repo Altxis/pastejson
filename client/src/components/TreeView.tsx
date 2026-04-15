@@ -1,10 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import "./TreeView.css";
 
-const MAX_VISIBLE_CHILDREN = 100;
-// Expanding more than this many children at once freezes the browser.
-// Above this threshold we ask the user to confirm before rendering.
-const SHOW_ALL_WARN_THRESHOLD = 500;
+const MAX_VISIBLE_CHILDREN = 100;  // initially shown
+const LOAD_CHUNK = 100;            // added per "load more" click
+const SHOW_ALL_WARN_THRESHOLD = 500; // confirm before rendering this many new nodes at once
 
 interface TreeNodeProps {
   value: unknown;
@@ -34,22 +33,41 @@ function ValueSpan({ value }: { value: unknown }) {
 
 function TreeNode({ value, keyName, depth }: TreeNodeProps) {
   const isCollapsible = value !== null && typeof value === "object";
+  const isArray = isCollapsible && Array.isArray(value);
 
-  // Compute child count before hooks so we can use it in the initial state.
   const childCount = !isCollapsible
     ? 0
-    : Array.isArray(value)
+    : isArray
       ? (value as unknown[]).length
       : Object.keys(value as object).length;
 
-  // Collapse at depth ≥ 2, or at depth 1 when the parent is large (> 50 children).
-  // This keeps auto-expand for small/medium JSON while preventing thousands of
-  // mounted nodes for wide arrays.
+  // Collapse at depth ≥ 2, or at depth 1 when the node has > 50 children.
   const [collapsed, setCollapsed] = useState(
     depth >= 2 || (depth >= 1 && childCount > 50),
   );
-  const [showAll, setShowAll] = useState(false);
 
+  // Start by showing at most MAX_VISIBLE_CHILDREN; the user can load more in
+  // chunks via the "+N more" button instead of rendering everything at once.
+  const [shownCount, setShownCount] = useState(
+    () => (isCollapsible ? Math.min(childCount, MAX_VISIBLE_CHILDREN) : 0),
+  );
+
+  // Only materialise the entries we're actually going to render.
+  // Rules-of-Hooks: useMemo must be called unconditionally, before any early
+  // return. For leaf nodes isCollapsible=false so this returns [] immediately.
+  const visible = useMemo<[string, unknown][]>(() => {
+    if (!isCollapsible || collapsed) return [];
+    if (isArray) {
+      const arr = value as unknown[];
+      const result: [string, unknown][] = new Array(shownCount);
+      for (let i = 0; i < shownCount; i++) result[i] = [String(i), arr[i]];
+      return result;
+    }
+    const allEntries = Object.entries(value as Record<string, unknown>);
+    return shownCount < allEntries.length ? allEntries.slice(0, shownCount) : allEntries;
+  }, [value, isCollapsible, isArray, collapsed, shownCount]);
+
+  const hidden = childCount - shownCount;
   const nodeStyle = { "--depth": depth } as React.CSSProperties;
 
   const keyEl =
@@ -60,13 +78,12 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
       </>
     ) : null;
 
+  // ── Leaf node ─────────────────────────────────────────────────────────────
   if (!isCollapsible) {
     return (
       <div className="tree-node tree-node--leaf" style={nodeStyle}>
         <div className="tree-node__row">
-          <span className="tree__arrow" aria-hidden="true">
-            {" "}
-          </span>
+          <span className="tree__arrow" aria-hidden="true"> </span>
           {keyEl}
           <ValueSpan value={value} />
         </div>
@@ -74,18 +91,27 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
     );
   }
 
-  const isArray = Array.isArray(value);
-  const entries: [string, unknown][] = isArray
-    ? (value as unknown[]).map((v, i) => [String(i), v])
-    : Object.entries(value as Record<string, unknown>);
+  // ── Collapsible node ──────────────────────────────────────────────────────
   const open = isArray ? "[" : "{";
   const close = isArray ? "]" : "}";
 
-  const visible = showAll ? entries : entries.slice(0, MAX_VISIBLE_CHILDREN);
-  const hidden = entries.length - visible.length;
-
   function toggle() {
     setCollapsed((c) => !c);
+  }
+
+  function handleLoadMore() {
+    setShownCount((c) => Math.min(c + LOAD_CHUNK, childCount));
+  }
+
+  function handleShowAll() {
+    if (
+      hidden > SHOW_ALL_WARN_THRESHOLD &&
+      !window.confirm(
+        `This will render ${childCount.toLocaleString()} nodes and may freeze the browser for a few seconds. Continue?`,
+      )
+    )
+      return;
+    setShownCount(childCount);
   }
 
   return (
@@ -123,34 +149,39 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
             ))}
             {hidden > 0 && (
               <div
-                className="tree-node__show-more"
+                className="tree-node__load-more"
                 style={{ "--depth": depth + 1 } as React.CSSProperties}
-                role="button"
-                tabIndex={0}
-                onClick={() => {
-                  if (
-                    hidden > SHOW_ALL_WARN_THRESHOLD &&
-                    !window.confirm(
-                      `This will render ${entries.length.toLocaleString()} nodes and may freeze the browser for a few seconds. Continue?`,
-                    )
-                  )
-                    return;
-                  setShowAll(true);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    if (
-                      hidden > SHOW_ALL_WARN_THRESHOLD &&
-                      !window.confirm(
-                        `This will render ${entries.length.toLocaleString()} nodes and may freeze the browser for a few seconds. Continue?`,
-                      )
-                    )
-                      return;
-                    setShowAll(true);
-                  }
-                }}
               >
-                +{hidden.toLocaleString()} more…
+                <span
+                  className="tree-node__load-chunk"
+                  role="button"
+                  tabIndex={0}
+                  onClick={handleLoadMore}
+                  onKeyDown={(e) =>
+                    (e.key === "Enter" || e.key === " ") && handleLoadMore()
+                  }
+                >
+                  +{Math.min(LOAD_CHUNK, hidden).toLocaleString()} more
+                </span>
+                {hidden > LOAD_CHUNK && (
+                  <>
+                    {" · "}
+                    <span
+                      className="tree-node__show-all"
+                      role="button"
+                      tabIndex={0}
+                      onClick={handleShowAll}
+                      onKeyDown={(e) =>
+                        (e.key === "Enter" || e.key === " ") && handleShowAll()
+                      }
+                    >
+                      show all {childCount.toLocaleString()}
+                    </span>
+                  </>
+                )}
+                <span className="tree-node__hidden-count">
+                  {" "}({hidden.toLocaleString()} hidden)
+                </span>
               </div>
             )}
           </div>

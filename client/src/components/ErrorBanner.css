@@ -1,0 +1,11 @@
+.error-banner {
+  margin-top: 16px;
+  padding: 12px 16px;
+  background: var(--accent-bg);
+  border: 1px solid var(--accent-border);
+  border-radius: 8px;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--accent);
+  line-height: 1.6;
+}

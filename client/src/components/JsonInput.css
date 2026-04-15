@@ -48,6 +48,27 @@
   opacity: 0.55;
 }
 
+.json-input__load-more-btn {
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--accent);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: opacity 0.15s;
+
+  &:hover { opacity: 0.75; }
+}
+
+.json-input__load-more-meta {
+  opacity: 0.6;
+  font-size: 11px;
+}
+
 .json-input__file-btn {
   font-size: 12px;
   padding: 4px 10px;

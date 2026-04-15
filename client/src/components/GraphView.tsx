@@ -1,32 +1,35 @@
-import { useMemo, useRef, useState, useEffect, useCallback } from 'react'
-import { buildGraph, NODE_WIDTH } from '../utils/buildGraph'
-import type { GraphNode, GraphEdge } from '../utils/buildGraph'
-import './GraphView.css'
+import { useMemo, useRef, useState, useEffect, useCallback } from "react";
+import { buildGraph, NODE_WIDTH } from "../utils/buildGraph";
+import type { GraphNode, GraphEdge } from "../utils/buildGraph";
+import "./GraphView.css";
 
 interface Props {
-  value: unknown
+  value: unknown;
 }
 
-// ─── value formatting ────────────────────────────────────────────────────────
+// ── value formatting ──────────────────────────────────────────────────────────
 
 function valueClass(v: unknown): string {
-  if (v === null) return 'null'
-  return typeof v  // 'string' | 'number' | 'boolean'
+  if (v === null) return "null";
+  return typeof v; // "string" | "number" | "boolean"
 }
 
 function formatValue(v: unknown): string {
-  if (v === null) return 'null'
-  if (typeof v === 'string') {
-    const s = v.length > 28 ? v.slice(0, 26) + '…' : v
-    return `"${s}"`
+  if (v === null) return "null";
+  if (typeof v === "string") {
+    const s = v.length > 28 ? v.slice(0, 26) + "…" : v;
+    return `"${s}"`;
   }
-  return String(v)
+  return String(v);
 }
 
-// ─── sub-components ───────────────────────────────────────────────────────────
+// ── sub-components ────────────────────────────────────────────────────────────
 
 function NodeCard({ node }: { node: GraphNode }) {
-  const badge = node.type === 'array' ? `[ ${node.primitiveRows.length + node.childEdges.length} ]` : `{ }`
+  const badge =
+    node.type === "array"
+      ? `[ ${node.primitiveRows.length + node.childEdges.length} ]`
+      : `{ }`;
   return (
     <div
       className={`graph-node graph-node--${node.type}`}
@@ -48,100 +51,100 @@ function NodeCard({ node }: { node: GraphNode }) {
         <div className="graph-node__more">+{node.extraRows} more</div>
       )}
     </div>
-  )
+  );
 }
 
 function EdgePath({ edge, nodesMap }: { edge: GraphEdge; nodesMap: Map<string, GraphNode> }) {
-  const from = nodesMap.get(edge.fromId)
-  const to   = nodesMap.get(edge.toId)
-  if (!from || !to) return null
+  const from = nodesMap.get(edge.fromId);
+  const to = nodesMap.get(edge.toId);
+  if (!from || !to) return null;
 
-  const x1 = from.x + NODE_WIDTH
-  const y1 = from.y + from.height / 2
-  const x2 = to.x
-  const y2 = to.y + to.height / 2
-  const cx = (x1 + x2) / 2
+  const x1 = from.x + NODE_WIDTH;
+  const y1 = from.y + from.height / 2;
+  const x2 = to.x;
+  const y2 = to.y + to.height / 2;
+  const cx = (x1 + x2) / 2;
 
   return (
     <path
       d={`M ${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}`}
       className="graph-edge"
     />
-  )
+  );
 }
 
-// ─── main component ───────────────────────────────────────────────────────────
+// ── main component ────────────────────────────────────────────────────────────
 
 export default function GraphView({ value }: Props) {
-  const graphData = useMemo(() => buildGraph(value), [value])
-  const nodesMap  = useMemo(
-    () => new Map(graphData.nodes.map(n => [n.id, n])),
+  const graphData = useMemo(() => buildGraph(value), [value]);
+  const nodesMap = useMemo(
+    () => new Map(graphData.nodes.map((n) => [n.id, n])),
     [graphData],
-  )
+  );
 
-  const containerRef = useRef<HTMLDivElement>(null)
-  const [pan, setPan]     = useState({ x: 0, y: 0 })
-  const [scale, setScale] = useState(1)
-  const dragging = useRef(false)
-  const origin   = useRef({ mx: 0, my: 0, px: 0, py: 0 })
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const [scale, setScale] = useState(1);
+  const dragging = useRef(false);
+  const origin = useRef({ mx: 0, my: 0, px: 0, py: 0 });
 
   // Auto-fit on first render / when data changes
   const fitToView = useCallback(() => {
-    const el = containerRef.current
-    if (!el) return
-    const { clientWidth, clientHeight } = el
+    const el = containerRef.current;
+    if (!el) return;
+    const { clientWidth, clientHeight } = el;
     const s = Math.min(
       1,
-      (clientWidth  - 80) / graphData.canvasWidth,
+      (clientWidth - 80) / graphData.canvasWidth,
       (clientHeight - 80) / graphData.canvasHeight,
-    )
-    setScale(s)
+    );
+    setScale(s);
     setPan({
-      x: (clientWidth  - graphData.canvasWidth  * s) / 2,
+      x: (clientWidth - graphData.canvasWidth * s) / 2,
       y: (clientHeight - graphData.canvasHeight * s) / 2,
-    })
-  }, [graphData])
+    });
+  }, [graphData]);
 
-  useEffect(() => { fitToView() }, [fitToView])
+  useEffect(() => { fitToView(); }, [fitToView]);
 
   // ── wheel zoom toward cursor ──────────────────────────────────────────────
   useEffect(() => {
-    const el = containerRef.current
-    if (!el) return
+    const el = containerRef.current;
+    if (!el) return;
     function onWheel(e: WheelEvent) {
-      e.preventDefault()
-      const rect = el!.getBoundingClientRect()
-      const mx = e.clientX - rect.left
-      const my = e.clientY - rect.top
-      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12
-      setScale(s => {
-        const ns = Math.min(3, Math.max(0.1, s * factor))
-        setPan(p => ({
+      e.preventDefault();
+      const rect = el!.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      const factor = e.deltaY < 0 ? 1.12 : 1 / 1.12;
+      setScale((s) => {
+        const ns = Math.min(3, Math.max(0.1, s * factor));
+        setPan((p) => ({
           x: mx - (mx - p.x) * (ns / s),
           y: my - (my - p.y) * (ns / s),
-        }))
-        return ns
-      })
+        }));
+        return ns;
+      });
     }
-    el.addEventListener('wheel', onWheel, { passive: false })
-    return () => el.removeEventListener('wheel', onWheel)
-  }, [])
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
 
   // ── drag to pan ───────────────────────────────────────────────────────────
   function onMouseDown(e: React.MouseEvent) {
-    if ((e.target as HTMLElement).closest('.graph-node')) return
-    dragging.current = true
-    origin.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y }
+    if ((e.target as HTMLElement).closest(".graph-node")) return;
+    dragging.current = true;
+    origin.current = { mx: e.clientX, my: e.clientY, px: pan.x, py: pan.y };
   }
   function onMouseMove(e: React.MouseEvent) {
-    if (!dragging.current) return
-    const { mx, my, px, py } = origin.current
-    setPan({ x: px + e.clientX - mx, y: py + e.clientY - my })
+    if (!dragging.current) return;
+    const { mx, my, px, py } = origin.current;
+    setPan({ x: px + e.clientX - mx, y: py + e.clientY - my });
   }
-  function onMouseUp() { dragging.current = false }
+  function onMouseUp() { dragging.current = false; }
 
-  const gridOx = ((pan.x % 24) + 24) % 24
-  const gridOy = ((pan.y % 24) + 24) % 24
+  const gridOx = ((pan.x % 24) + 24) % 24;
+  const gridOy = ((pan.y % 24) + 24) % 24;
 
   return (
     <div
@@ -153,7 +156,6 @@ export default function GraphView({ value }: Props) {
       onMouseUp={onMouseUp}
       onMouseLeave={onMouseUp}
     >
-      {/* toolbar */}
       <div className="graph-toolbar">
         {graphData.truncated && (
           <span className="graph-toolbar__warn">
@@ -163,16 +165,26 @@ export default function GraphView({ value }: Props) {
         <button className="graph-toolbar__btn" onClick={fitToView} type="button">
           Fit
         </button>
-        <button className="graph-toolbar__btn" onClick={() => setScale(s => Math.min(3, s * 1.25))} type="button">+</button>
-        <button className="graph-toolbar__btn" onClick={() => setScale(s => Math.max(0.1, s / 1.25))} type="button">−</button>
+        <button
+          className="graph-toolbar__btn"
+          onClick={() => setScale((s) => Math.min(3, s * 1.25))}
+          type="button"
+        >
+          +
+        </button>
+        <button
+          className="graph-toolbar__btn"
+          onClick={() => setScale((s) => Math.max(0.1, s / 1.25))}
+          type="button"
+        >
+          −
+        </button>
       </div>
 
-      {/* canvas */}
       <div
         className="graph-canvas"
         style={{ transform: `translate(${pan.x}px, ${pan.y}px) scale(${scale})` }}
       >
-        {/* edges (SVG layer behind nodes) */}
         <svg
           className="graph-edges"
           style={{ width: graphData.canvasWidth, height: graphData.canvasHeight }}
@@ -182,11 +194,10 @@ export default function GraphView({ value }: Props) {
           ))}
         </svg>
 
-        {/* nodes */}
-        {graphData.nodes.map(node => (
+        {graphData.nodes.map((node) => (
           <NodeCard key={node.id} node={node} />
         ))}
       </div>
     </div>
-  )
+  );
 }

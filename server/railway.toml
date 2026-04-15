@@ -3,7 +3,7 @@ builder = "nixpacks"
 buildCommand = "npm run install:all && npm run build"
 
 [deploy]
-startCommand = "node server/dist/main"
+startCommand = "node dist/main"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"

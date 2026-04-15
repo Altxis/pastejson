@@ -10,7 +10,7 @@ import ErrorBanner from "./components/ErrorBanner";
 import { tryRepairTruncated } from "./utils/repairJson";
 import type { View, WorkerResult } from "./types";
 import "./App.css";
-import { Analytics } from "@vercel/analytics/nuxt/runtime";
+import { Analytics } from "@vercel/analytics/react";
 
 type ParseState =
   | { status: "empty" }
@@ -187,29 +187,24 @@ export default function App() {
           Paste or drop a .json file — see something beautiful.
         </p>
       </header>
-
       <JsonInput
         onType={handleType}
         onFile={handleFile}
         onReadStart={handleReadStart}
         onReadError={handleReadError}
       />
-
       {parseState.status === "error" && (
         <ErrorBanner message={parseState.message} />
       )}
-
       {parseState.status === "reading" && (
         <div className="app-parsing">
           Reading {parseState.fileName}
           {sizeMB ? ` (${sizeMB} MB)` : ""}…
         </div>
       )}
-
       {parseState.status === "parsing" && (
         <div className="app-parsing">Parsing…</div>
       )}
-
       {parseState.status === "ok" && (
         <>
           {parseState.warning && (
@@ -226,13 +221,12 @@ export default function App() {
           </div>
         </>
       )}
-
       {parseState.status === "empty" && (
         <div className="app-empty">
           <p>Supports objects, arrays, strings, numbers, booleans and null.</p>
         </div>
       )}
-      <Analytics />
+      <Analytics /> {/* Vercel Analytics (optional) */}
     </div>
   );
 }

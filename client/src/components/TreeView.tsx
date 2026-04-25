@@ -1,14 +1,17 @@
 import { useState, useMemo } from "react";
+import { buildSearchIndex, type SearchIndex } from "../utils/search";
 import "./TreeView.css";
 
-const MAX_VISIBLE_CHILDREN = 100;  // initially shown
-const LOAD_CHUNK = 100;            // added per "load more" click
-const SHOW_ALL_WARN_THRESHOLD = 500; // confirm before rendering this many new nodes at once
+const MAX_VISIBLE_CHILDREN = 100;
+const LOAD_CHUNK = 100;
+const SHOW_ALL_WARN_THRESHOLD = 500;
 
 interface TreeNodeProps {
   value: unknown;
   keyName?: string;
   depth: number;
+  path: string;
+  search: SearchIndex | null;
 }
 
 function preview(value: unknown): string {
@@ -20,18 +23,50 @@ function preview(value: unknown): string {
   return "";
 }
 
-function ValueSpan({ value }: { value: unknown }) {
-  if (value === null) return <span className="tok-null">null</span>;
-  if (typeof value === "string")
-    return <span className="tok-string">"{value}"</span>;
-  if (typeof value === "number")
-    return <span className="tok-number">{String(value)}</span>;
-  if (typeof value === "boolean")
-    return <span className="tok-boolean">{String(value)}</span>;
-  return <span>{String(value)}</span>;
+/** Highlight the first occurrence of `query` inside `text`. */
+function Highlight({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  const idx = lower.indexOf(q);
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="search-mark">{text.slice(idx, idx + q.length)}</mark>
+      {text.slice(idx + q.length)}
+    </>
+  );
 }
 
-function TreeNode({ value, keyName, depth }: TreeNodeProps) {
+function ValueSpan({ value, query }: { value: unknown; query: string }) {
+  if (value === null) return <span className="tok-null">null</span>;
+  if (typeof value === "string")
+    return (
+      <span className="tok-string">
+        &ldquo;<Highlight text={value} query={query} />&rdquo;
+      </span>
+    );
+  if (typeof value === "number")
+    return (
+      <span className="tok-number">
+        <Highlight text={String(value)} query={query} />
+      </span>
+    );
+  if (typeof value === "boolean")
+    return (
+      <span className="tok-boolean">
+        <Highlight text={String(value)} query={query} />
+      </span>
+    );
+  return (
+    <span>
+      <Highlight text={String(value)} query={query} />
+    </span>
+  );
+}
+
+function TreeNode({ value, keyName, depth, path, search }: TreeNodeProps) {
   const isCollapsible = value !== null && typeof value === "object";
   const isArray = isCollapsible && Array.isArray(value);
 
@@ -41,22 +76,21 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
       ? (value as unknown[]).length
       : Object.keys(value as object).length;
 
-  // Collapse at depth ≥ 2, or at depth 1 when the node has > 50 children.
   const [collapsed, setCollapsed] = useState(
     depth >= 2 || (depth >= 1 && childCount > 50),
   );
 
-  // Start by showing at most MAX_VISIBLE_CHILDREN; the user can load more in
-  // chunks via the "+N more" button instead of rendering everything at once.
   const [shownCount, setShownCount] = useState(
     () => (isCollapsible ? Math.min(childCount, MAX_VISIBLE_CHILDREN) : 0),
   );
 
-  // Only materialise the entries we're actually going to render.
-  // Rules-of-Hooks: useMemo must be called unconditionally, before any early
-  // return. For leaf nodes isCollapsible=false so this returns [] immediately.
+  // Force-expand nodes that contain a search match somewhere in their subtree.
+  const isMatch = search !== null && search.matchedPaths.has(path);
+  const hasDescendantMatch = search !== null && search.ancestorPaths.has(path);
+  const effectiveCollapsed = hasDescendantMatch ? false : collapsed;
+
   const visible = useMemo<[string, unknown][]>(() => {
-    if (!isCollapsible || collapsed) return [];
+    if (!isCollapsible || effectiveCollapsed) return [];
     if (isArray) {
       const arr = value as unknown[];
       const result: [string, unknown][] = new Array(shownCount);
@@ -65,15 +99,18 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
     }
     const allEntries = Object.entries(value as Record<string, unknown>);
     return shownCount < allEntries.length ? allEntries.slice(0, shownCount) : allEntries;
-  }, [value, isCollapsible, isArray, collapsed, shownCount]);
+  }, [value, isCollapsible, isArray, effectiveCollapsed, shownCount]);
 
   const hidden = childCount - shownCount;
   const nodeStyle = { "--depth": depth } as React.CSSProperties;
+  const query = search?.query ?? "";
 
   const keyEl =
     keyName !== undefined ? (
       <>
-        <span className="tree__key tok-key">"{keyName}"</span>
+        <span className="tree__key tok-key">
+          &ldquo;<Highlight text={keyName} query={query} />&rdquo;
+        </span>
         <span className="tree__colon">: </span>
       </>
     ) : null;
@@ -82,10 +119,10 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
   if (!isCollapsible) {
     return (
       <div className="tree-node tree-node--leaf" style={nodeStyle}>
-        <div className="tree-node__row">
+        <div className={`tree-node__row${isMatch ? " tree-node__row--match" : ""}`}>
           <span className="tree__arrow" aria-hidden="true"> </span>
           {keyEl}
-          <ValueSpan value={value} />
+          <ValueSpan value={value} query={query} />
         </div>
       </div>
     );
@@ -117,26 +154,26 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
   return (
     <div className="tree-node" style={nodeStyle}>
       <div
-        className="tree-node__row"
+        className={`tree-node__row${isMatch ? " tree-node__row--match" : ""}`}
         role="button"
         tabIndex={0}
-        aria-expanded={!collapsed}
+        aria-expanded={!effectiveCollapsed}
         onClick={toggle}
         onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && toggle()}
       >
         <span
-          className={`tree__arrow${collapsed ? "" : " tree__arrow--open"}`}
+          className={`tree__arrow${effectiveCollapsed ? "" : " tree__arrow--open"}`}
           aria-hidden="true"
         >
           ▶
         </span>
         {keyEl}
         <span className="tree__brace">{open}</span>
-        {collapsed && <span className="tree__preview">{preview(value)}</span>}
-        {collapsed && <span className="tree__brace">{close}</span>}
+        {effectiveCollapsed && <span className="tree__preview">{preview(value)}</span>}
+        {effectiveCollapsed && <span className="tree__brace">{close}</span>}
       </div>
 
-      {!collapsed && (
+      {!effectiveCollapsed && (
         <>
           <div className="tree-node__children">
             {visible.map(([k, v]) => (
@@ -145,6 +182,8 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
                 value={v}
                 keyName={isArray ? undefined : k}
                 depth={depth + 1}
+                path={path ? `${path}.${k}` : k}
+                search={search}
               />
             ))}
             {hidden > 0 && (
@@ -196,12 +235,18 @@ function TreeNode({ value, keyName, depth }: TreeNodeProps) {
 
 interface Props {
   value: unknown;
+  query: string;
 }
 
-export default function TreeView({ value }: Props) {
+export default function TreeView({ value, query }: Props) {
+  const search = useMemo<SearchIndex | null>(() => {
+    if (!query.trim()) return null;
+    return buildSearchIndex(value, query);
+  }, [value, query]);
+
   return (
     <div className="tree-view">
-      <TreeNode value={value} depth={0} />
+      <TreeNode value={value} depth={0} path="" search={search} />
     </div>
   );
 }

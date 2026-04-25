@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { flushSync } from "react-dom";
 import JsonInput from "./components/JsonInput";
 import ViewTabs from "./components/ViewTabs";
+import SearchBar from "./components/SearchBar";
 import TreeView from "./components/TreeView";
 import TableView from "./components/TableView";
 import RawView from "./components/RawView";
@@ -25,6 +26,7 @@ const WORKER_THRESHOLD_BYTES = 1 * 1024 * 1024; // 1 MB
 export default function App() {
   const [view, setView] = useState<View>("tree");
   const [parseState, setParseState] = useState<ParseState>({ status: "empty" });
+  const [query, setQuery] = useState("");
   const workerRef = useRef<Worker | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -34,6 +36,7 @@ export default function App() {
   function handleReadStart(fileName: string, fileSize: number) {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     workerRef.current?.terminate();
+    setQuery("");
     flushSync(() => setParseState({ status: "reading", fileName, fileSize }));
   }
 
@@ -130,6 +133,7 @@ export default function App() {
 
   // ── Typing path (debounced worker) ────────────────────────────────────────
   function handleType(raw: string) {
+    setQuery("");
     if (!raw.trim()) {
       if (debounceRef.current) clearTimeout(debounceRef.current);
       workerRef.current?.terminate();
@@ -212,9 +216,10 @@ export default function App() {
           )}
           <div className="viewer">
             <ViewTabs active={view} onChange={setView} />
+            <SearchBar query={query} onChange={setQuery} />
             <div className="view-content" key={view}>
-              {view === "tree" && <TreeView value={parseState.value} />}
-              {view === "table" && <TableView value={parseState.value} />}
+              {view === "tree" && <TreeView value={parseState.value} query={query} />}
+              {view === "table" && <TableView value={parseState.value} query={query} />}
               {view === "raw" && <RawView value={parseState.value} />}
               {view === "graph" && <GraphView value={parseState.value} />}
             </div>

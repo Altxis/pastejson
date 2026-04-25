@@ -3,11 +3,12 @@ import { flatten } from "../utils/flatten";
 import CopyButton from "./CopyButton";
 import "./TableView.css";
 
-const ROW_H = 36;       // approximate rendered row height in px
-const OVERSCAN = 10;    // extra rows to render above and below the viewport
+const ROW_H = 36;
+const OVERSCAN = 10;
 
 interface Props {
   value: unknown;
+  query: string;
 }
 
 function typeName(v: unknown): string {
@@ -16,67 +17,63 @@ function typeName(v: unknown): string {
   return typeof v;
 }
 
-export default function TableView({ value }: Props) {
-  const [filter, setFilter] = useState("");
-  const [debouncedFilter, setDebouncedFilter] = useState("");
+function Highlight({ text, query }: { text: string; query: string }) {
+  if (!query) return <>{text}</>;
+  const lower = text.toLowerCase();
+  const q = query.toLowerCase();
+  const idx = lower.indexOf(q);
+  if (idx === -1) return <>{text}</>;
+  return (
+    <>
+      {text.slice(0, idx)}
+      <mark className="search-mark">{text.slice(idx, idx + q.length)}</mark>
+      {text.slice(idx + q.length)}
+    </>
+  );
+}
+
+export default function TableView({ value, query }: Props) {
   const [scrollTop, setScrollTop] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
-  const filterDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Memoize flatten — only recomputes when the parsed value changes, not on
-  // every scroll/filter re-render. For large JSON (e.g. 23k entries) this
-  // prevents the main thread from blocking on every scroll tick.
   const rows = useMemo(() => flatten(value), [value]);
 
-  // Memoize filtering — only reruns when the debounced filter string or rows change.
-  const filtered = useMemo(
-    () =>
-      debouncedFilter
-        ? rows.filter(([path]) =>
-            path.toLowerCase().includes(debouncedFilter.toLowerCase()),
-          )
-        : rows,
-    [rows, debouncedFilter],
-  );
+  // Filter by path OR value — both benefit from the global search query
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(([path, val]) => {
+      const valStr = val === null ? "null" : String(val);
+      return path.toLowerCase().includes(q) || valStr.toLowerCase().includes(q);
+    });
+  }, [rows, query]);
 
-  const handleFilterChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setFilter(val);
-    // Debounce the actual filter so we don't re-filter 70k rows on every keystroke
-    if (filterDebounceRef.current) clearTimeout(filterDebounceRef.current);
-    filterDebounceRef.current = setTimeout(() => setDebouncedFilter(val), 150);
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    setScrollTop((e.target as HTMLDivElement).scrollTop);
   }, []);
 
   // Virtual window
   const containerH = containerRef.current?.clientHeight ?? 600;
   const visibleCount = Math.ceil(containerH / ROW_H);
   const startIndex = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN);
-  const endIndex = Math.min(
-    filtered.length,
-    startIndex + visibleCount + OVERSCAN * 2,
-  );
+  const endIndex = Math.min(filtered.length, startIndex + visibleCount + OVERSCAN * 2);
   const visible = filtered.slice(startIndex, endIndex);
   const topH = startIndex * ROW_H;
   const bottomH = (filtered.length - endIndex) * ROW_H;
 
+  const showCount = query.trim()
+    ? `${filtered.length.toLocaleString()} of ${rows.length.toLocaleString()} rows`
+    : `${rows.length.toLocaleString()} rows`;
+
   return (
     <div className="table-view">
       <div className="table-view__toolbar">
-        <input
-          className="table-view__filter"
-          type="text"
-          placeholder="Filter by path…"
-          value={filter}
-          onChange={handleFilterChange}
-        />
-        <span className="table-view__count">{filtered.length} rows</span>
+        <span className="table-view__count">{showCount}</span>
       </div>
       <div
         ref={containerRef}
         className="table-view__scroll"
-        onScroll={(e) =>
-          setScrollTop((e.target as HTMLDivElement).scrollTop)
-        }
+        onScroll={handleScroll}
       >
         <table className="table-view__table">
           <thead>
@@ -90,21 +87,22 @@ export default function TableView({ value }: Props) {
           <tbody>
             {topH > 0 && (
               <tr>
-                <td
-                  colSpan={4}
-                  style={{ height: topH, padding: 0, border: "none" }}
-                />
+                <td colSpan={4} style={{ height: topH, padding: 0, border: "none" }} />
               </tr>
             )}
             {visible.map(([path, val], i) => (
               <tr key={startIndex + i}>
-                <td className="col-path">{path}</td>
+                <td className="col-path">
+                  <Highlight text={path} query={query} />
+                </td>
                 <td className="col-type">
                   <span className={`type-badge type-${typeName(val)}`}>
                     {typeName(val)}
                   </span>
                 </td>
-                <td className="col-value">{String(val)}</td>
+                <td className="col-value">
+                  <Highlight text={String(val)} query={query} />
+                </td>
                 <td className="col-copy">
                   <CopyButton text={path} title="Copy path" />
                 </td>
@@ -112,10 +110,7 @@ export default function TableView({ value }: Props) {
             ))}
             {bottomH > 0 && (
               <tr>
-                <td
-                  colSpan={4}
-                  style={{ height: bottomH, padding: 0, border: "none" }}
-                />
+                <td colSpan={4} style={{ height: bottomH, padding: 0, border: "none" }} />
               </tr>
             )}
           </tbody>

@@ -10,24 +10,6 @@
   border-bottom: 1px solid var(--border);
 }
 
-.table-view__filter {
-  flex: 1;
-  max-width: 320px;
-  padding: 5px 10px;
-  font-size: 13px;
-  font-family: var(--mono);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--code-bg);
-  color: var(--text-h);
-  outline: none;
-  transition: border-color 0.15s;
-
-  &:focus {
-    border-color: var(--accent);
-  }
-}
-
 .table-view__count {
   font-size: 11px;
   font-family: var(--mono);
@@ -36,70 +18,87 @@
   margin-left: auto;
 }
 
-.table-view__scroll {
-  overflow: auto;
-  height: 70vh;
+/* ── Shared grid columns: path | type | value | copy ── */
+.table-view__head,
+.table-view__row {
+  display: grid;
+  grid-template-columns: 2fr 80px 3fr 32px;
+  align-items: center;
 }
 
-.table-view__table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 13px;
-  font-family: var(--mono);
+/* ── Header — sticky inside the scroll container ── */
+.table-view__head {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
 }
 
-.table-view__table thead th {
-  text-align: left;
+.table-view__th {
   padding: 8px 12px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--text);
-  border-bottom: 1px solid var(--border);
-  position: sticky;
-  top: 0;
-  background: var(--bg);
+  opacity: 0.6;
+  font-family: var(--mono);
 }
 
-.table-view__table tbody tr {
-  border-bottom: 1px solid var(--border);
-  transition: background 0.1s;
+/* ── Scroll container ── */
+.table-view__scroll {
+  overflow-x: hidden;
+  overflow-y: auto;
+  height: 70vh;
+}
 
-  &:last-child {
-    border-bottom: none;
-  }
+/* ── Rows ── */
+.table-view__row {
+  height: 36px;
+  border-bottom: 1px solid var(--border);
+  font-size: 13px;
+  font-family: var(--mono);
+  transition: background 0.08s;
+
   &:hover {
     background: var(--code-bg);
   }
-}
-
-.table-view__table td {
-  padding: 7px 12px;
-  vertical-align: middle;
+  &:hover .copy-btn--compact {
+    opacity: 0.5;
+  }
 }
 
 .col-path {
+  padding: 0 12px;
   color: var(--json-key);
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.col-type {
+  padding: 0 12px;
 }
 
 .col-value {
+  padding: 0 12px;
   color: var(--text-h);
-  word-break: break-all;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
 }
 
 .col-copy {
-  width: 64px;
-  text-align: right;
-  opacity: 0;
-  transition: opacity 0.1s;
+  padding: 0 8px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
 }
 
-.table-view__table tr:hover .col-copy {
-  opacity: 1;
-}
-
+/* ── Type badges ── */
 .type-badge {
   display: inline-block;
   font-size: 10px;

@@ -12,6 +12,133 @@
   }
 }
 
+/* ── Mode toggle (Paste | URL) ── */
+.json-input__mode-bar {
+  display: flex;
+  gap: 2px;
+  padding: 8px 12px 0;
+  background: var(--code-bg);
+}
+
+.json-input__mode-btn {
+  padding: 4px 12px;
+  border: 1px solid transparent;
+  border-radius: 5px 5px 0 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-family: inherit;
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.12s, background 0.12s;
+
+  &:hover { opacity: 0.8; }
+}
+
+.json-input__mode-btn--active {
+  opacity: 1;
+  background: var(--bg);
+  border-color: var(--border);
+  border-bottom-color: var(--bg);
+}
+
+/* ── URL mode area ── */
+.json-input__url-area {
+  padding: 16px;
+  background: var(--code-bg);
+  min-height: 100px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.json-input__url-row {
+  display: flex;
+  gap: 8px;
+}
+
+.json-input__url-input {
+  flex: 1;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text-h);
+  font-size: 13px;
+  font-family: var(--mono);
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus { border-color: var(--accent); }
+  &:disabled { opacity: 0.55; }
+  &::placeholder { opacity: 0.4; }
+}
+
+.json-input__fetch-btn {
+  padding: 9px 18px;
+  border: none;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  font-family: inherit;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+
+  &:hover:not(:disabled) { opacity: 0.85; }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.json-input__spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid rgba(255,255,255,0.4);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: url-spin 0.6s linear infinite;
+}
+
+@keyframes url-spin {
+  to { transform: rotate(360deg); }
+}
+
+.json-input__url-hint {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+  opacity: 0.45;
+  font-family: var(--mono);
+}
+
+.json-input__url-meta {
+  margin: 0;
+  font-size: 12px;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.json-input__url-source {
+  color: var(--accent);
+  font-family: var(--mono);
+  word-break: break-all;
+}
+
+.json-input__url-error {
+  margin: 0;
+  font-size: 12px;
+  color: #ef4444;
+  font-family: var(--mono);
+}
+
 .json-input__textarea-wrap {
   position: relative;
 }

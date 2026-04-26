@@ -4,8 +4,9 @@ import CopyButton from "./CopyButton";
 import "./TableView.css";
 
 const ROW_H = 36;
+const HEADER_H = 37; // sticky header row height
 const OVERSCAN = 10;
-const MAX_FILTERED_ROWS = 2000; // cap search results to keep the table snappy
+const MAX_FILTERED_ROWS = 2000;
 
 interface Props {
   value: unknown;
@@ -39,8 +40,6 @@ export default function TableView({ value, query }: Props) {
 
   const rows = useMemo(() => flatten(value), [value]);
 
-  // Filter by path OR value. Cap at MAX_FILTERED_ROWS and keep the total for
-  // the "showing first N of M" label.
   const { filtered, totalMatchCount } = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return { filtered: rows, totalMatchCount: rows.length };
@@ -58,14 +57,16 @@ export default function TableView({ value, query }: Props) {
     setScrollTop((e.target as HTMLDivElement).scrollTop);
   }, []);
 
-  // Virtual window
+  // Header is sticky inside the scroll container — subtract its height from
+  // the viewport so row count is correct, but scrollTop is unaffected.
   const containerH = containerRef.current?.clientHeight ?? 600;
-  const visibleCount = Math.ceil(containerH / ROW_H);
+  const rowViewH = containerH - HEADER_H;
+  const visibleCount = Math.ceil(rowViewH / ROW_H);
   const startIndex = Math.max(0, Math.floor(scrollTop / ROW_H) - OVERSCAN);
   const endIndex = Math.min(filtered.length, startIndex + visibleCount + OVERSCAN * 2);
   const visible = filtered.slice(startIndex, endIndex);
-  const topH = startIndex * ROW_H;
-  const bottomH = (filtered.length - endIndex) * ROW_H;
+  const totalHeight = filtered.length * ROW_H;
+  const topPad = startIndex * ROW_H;
 
   const isCapped = query.trim() && totalMatchCount > MAX_FILTERED_ROWS;
   const showCount = query.trim()
@@ -79,51 +80,48 @@ export default function TableView({ value, query }: Props) {
       <div className="table-view__toolbar">
         <span className="table-view__count">{showCount}</span>
       </div>
+
       <div
         ref={containerRef}
         className="table-view__scroll"
         onScroll={handleScroll}
       >
-        <table className="table-view__table">
-          <thead>
-            <tr>
-              <th>Path</th>
-              <th>Type</th>
-              <th>Value</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            {topH > 0 && (
-              <tr>
-                <td colSpan={4} style={{ height: topH, padding: 0, border: "none" }} />
-              </tr>
-            )}
+        {/* Sticky header — inside the scroll container so it shares the same
+            width context (including scrollbar gutter). No more column drift. */}
+        <div className="table-view__head">
+          <span className="table-view__th">Path</span>
+          <span className="table-view__th">Type</span>
+          <span className="table-view__th">Value</span>
+          <span className="table-view__th" />
+        </div>
+
+        {/* Full-height inner div drives the scrollbar size */}
+        <div style={{ height: totalHeight, position: "relative" }}>
+          {/* Visible rows — absolutely positioned, no spacer rows */}
+          <div
+            className="table-view__rows"
+            style={{ position: "absolute", top: topPad, left: 0, right: 0 }}
+          >
             {visible.map(([path, val], i) => (
-              <tr key={startIndex + i}>
-                <td className="col-path">
+              <div key={startIndex + i} className="table-view__row">
+                <span className="col-path">
                   <Highlight text={path} query={query} />
-                </td>
-                <td className="col-type">
+                </span>
+                <span className="col-type">
                   <span className={`type-badge type-${typeName(val)}`}>
                     {typeName(val)}
                   </span>
-                </td>
-                <td className="col-value">
+                </span>
+                <span className="col-value">
                   <Highlight text={String(val)} query={query} />
-                </td>
-                <td className="col-copy">
-                  <CopyButton text={path} title="Copy path" />
-                </td>
-              </tr>
+                </span>
+                <span className="col-copy">
+                  <CopyButton compact text={path} title="Copy path" />
+                </span>
+              </div>
             ))}
-            {bottomH > 0 && (
-              <tr>
-                <td colSpan={4} style={{ height: bottomH, padding: 0, border: "none" }} />
-              </tr>
-            )}
-          </tbody>
-        </table>
+          </div>
+        </div>
       </div>
     </div>
   );

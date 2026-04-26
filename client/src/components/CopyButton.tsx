@@ -21,7 +21,7 @@ export default function CopyButton({ text, title = "Copy", compact = false }: Pr
     return (
       <button
         type="button"
-        title={copied ? "Copied!" : title}
+        title={copied ? "Copied!" : title}  /* drives the CSS ::after tooltip */
         onClick={handleClick}
         className={`copy-btn copy-btn--compact${copied ? " copy-btn--copied" : ""}`}
         aria-label={title}

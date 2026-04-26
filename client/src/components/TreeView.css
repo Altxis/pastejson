@@ -23,6 +23,9 @@
   &:hover {
     background: color-mix(in srgb, var(--accent) 6%, transparent);
   }
+  &:hover .copy-btn--compact {
+    opacity: 0.45;
+  }
   &:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: -2px;
@@ -32,7 +35,10 @@
 .tree-node--leaf .tree-node__row {
   cursor: default;
   &:hover {
-    background: transparent;
+    background: color-mix(in srgb, var(--accent) 4%, transparent);
+  }
+  &:hover .copy-btn--compact {
+    opacity: 0.45;
   }
 }
 

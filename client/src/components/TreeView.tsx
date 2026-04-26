@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { buildSearchIndex, type SearchIndex } from "../utils/search";
+import CopyButton from "./CopyButton";
 import "./TreeView.css";
 
 const MAX_VISIBLE_CHILDREN = 100;
@@ -181,6 +182,9 @@ function TreeNode({ value, keyName, depth, path, search }: TreeNodeProps) {
           <span className="tree__arrow" aria-hidden="true"> </span>
           {keyEl}
           <ValueSpan value={value} query={query} />
+          {path && (
+            <CopyButton compact text={path} title="Copy path" />
+          )}
         </div>
       </div>
     );
@@ -229,6 +233,9 @@ function TreeNode({ value, keyName, depth, path, search }: TreeNodeProps) {
         <span className="tree__brace">{open}</span>
         {effectiveCollapsed && <span className="tree__preview">{preview(value)}</span>}
         {effectiveCollapsed && <span className="tree__brace">{close}</span>}
+        {path && (
+          <CopyButton compact text={path} title="Copy path" />
+        )}
       </div>
 
       {!effectiveCollapsed && (

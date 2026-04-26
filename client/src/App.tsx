@@ -225,6 +225,13 @@ export default function App() {
         onFile={handleFile}
         onReadStart={handleReadStart}
         onReadError={handleReadError}
+        onClear={() => {
+          if (debounceRef.current) clearTimeout(debounceRef.current);
+          workerRef.current?.terminate();
+          setQuery("");
+          setSharedExpiry(null);
+          setParseState({ status: "empty" });
+        }}
       />
       {parseState.status === "error" && (
         <ErrorBanner message={parseState.message} />

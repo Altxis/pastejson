@@ -21,10 +21,11 @@ interface Props {
   onFile: (raw: string, fileSize: number) => void;
   onReadStart: (fileName: string, fileSize: number) => void;
   onReadError: (message: string) => void;
+  onClear: () => void;
 }
 
 const JsonInput = forwardRef<JsonInputHandle, Props>(function JsonInput(
-  { onType, onFile, onReadStart, onReadError }: Props,
+  { onType, onFile, onReadStart, onReadError, onClear }: Props,
   ref,
 ) {
   const [dragActive, setDragActive] = useState(false);
@@ -49,7 +50,9 @@ const JsonInput = forwardRef<JsonInputHandle, Props>(function JsonInput(
   }));
 
   function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
-    setFileMeta(null);
+    // fileMeta means we're showing a truncated file preview — the textarea
+    // is read-only in this state, so onChange should not fire. Guard anyway.
+    if (fileMeta) return;
     onType(e.target.value);
   }
 
@@ -57,6 +60,16 @@ const JsonInput = forwardRef<JsonInputHandle, Props>(function JsonInput(
     const ta = e.currentTarget;
     const nearBottom = ta.scrollHeight - ta.scrollTop - ta.clientHeight < 120;
     if (nearBottom && canLoadMore) handleLoadMoreEditor();
+  }
+
+  function handleClear() {
+    rawRef.current = "";
+    setFileMeta(null);
+    if (textareaRef.current) {
+      textareaRef.current.value = "";
+      textareaRef.current.focus();
+    }
+    onClear();
   }
 
   function loadFile(file: File) {
@@ -128,9 +141,8 @@ const JsonInput = forwardRef<JsonInputHandle, Props>(function JsonInput(
     fileMeta.displayed < fileMeta.total &&
     fileMeta.displayed < TEXTAREA_MAX;
 
-  const hint = fileMeta
-    ? `Large file — editor shows first ${(fileMeta.displayed / 1024).toFixed(0)} KB, use tabs below for full view`
-    : "or drop a .json file anywhere above";
+  // When a file is loaded, the textarea shows a read-only preview.
+  const isPreview = fileMeta !== null;
 
   return (
     <div
@@ -141,21 +153,44 @@ const JsonInput = forwardRef<JsonInputHandle, Props>(function JsonInput(
       onDragLeave={() => setDragActive(false)}
       onDrop={handleDrop}
     >
-      <textarea
-        ref={textareaRef}
-        className="json-input__textarea"
-        onChange={handleChange}
-        onScroll={handleTextareaScroll}
-        onDragOver={(e) => e.preventDefault()}
-        onDrop={handleDrop}
-        placeholder={'Paste JSON here…\n\n{\n  "name": "Alice",\n  "age": 30\n}'}
-        spellCheck={false}
-        autoComplete="off"
-        autoCorrect="off"
-        autoCapitalize="off"
-      />
+      <div className="json-input__textarea-wrap">
+        <textarea
+          ref={textareaRef}
+          className={`json-input__textarea${isPreview ? " json-input__textarea--preview" : ""}`}
+          onChange={handleChange}
+          onScroll={handleTextareaScroll}
+          onDragOver={(e) => e.preventDefault()}
+          onDrop={handleDrop}
+          placeholder={'Paste JSON here…\n\n{\n  "name": "Alice",\n  "age": 30\n}'}
+          spellCheck={false}
+          autoComplete="off"
+          autoCorrect="off"
+          autoCapitalize="off"
+          readOnly={isPreview}
+        />
+        {isPreview && (
+          <button
+            className="json-input__clear-btn"
+            onClick={handleClear}
+            type="button"
+            title="Clear and start over"
+          >
+            ×
+          </button>
+        )}
+      </div>
       <div className="json-input__toolbar">
-        <span className="json-input__hint">{hint}</span>
+        {isPreview ? (
+          <span className="json-input__hint">
+            Preview — first {(fileMeta!.displayed / 1024).toFixed(0)} KB of {(fileMeta!.total / 1024 / 1024).toFixed(1)} MB shown
+            {" · "}
+            <button className="json-input__clear-link" onClick={handleClear} type="button">
+              clear to edit
+            </button>
+          </span>
+        ) : (
+          <span className="json-input__hint">or drop a .json file anywhere above</span>
+        )}
         <input
           type="file"
           accept=".json,application/json,text/plain"

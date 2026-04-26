@@ -1,8 +1,9 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { flushSync } from "react-dom";
 import JsonInput from "./components/JsonInput";
 import ViewTabs from "./components/ViewTabs";
 import SearchBar from "./components/SearchBar";
+import ShareButton from "./components/ShareButton";
 import TreeView from "./components/TreeView";
 import TableView from "./components/TableView";
 import RawView from "./components/RawView";
@@ -12,6 +13,8 @@ import { tryRepairTruncated } from "./utils/repairJson";
 import type { View, WorkerResult } from "./types";
 import "./App.css";
 import { Analytics } from "@vercel/analytics/react";
+
+const API_BASE = import.meta.env.VITE_API_URL ?? "";
 
 type ParseState =
   | { status: "empty" }
@@ -27,8 +30,31 @@ export default function App() {
   const [view, setView] = useState<View>("tree");
   const [parseState, setParseState] = useState<ParseState>({ status: "empty" });
   const [query, setQuery] = useState("");
+  const [sharedExpiry, setSharedExpiry] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ── Load shared snapshot from /s/:id URL on mount ────────────────────────
+  useEffect(() => {
+    const match = window.location.pathname.match(/^\/s\/([A-Za-z0-9_-]+)$/);
+    if (!match) return;
+    const id = match[1];
+    setParseState({ status: "parsing" });
+
+    fetch(`${API_BASE}/api/share/${id}`)
+      .then((res) => {
+        if (!res.ok) throw new Error("Snapshot not found or expired");
+        return res.json() as Promise<{ raw: string; expiresAt: string }>;
+      })
+      .then(({ raw, expiresAt }) => {
+        setSharedExpiry(expiresAt);
+        handleFile(raw, raw.length);
+      })
+      .catch((e: Error) => {
+        setParseState({ status: "error", message: e.message });
+      });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ── Called the instant the user picks/drops a file ────────────────────────
   // Fires before FileReader starts so the user sees immediate feedback even for
@@ -215,7 +241,20 @@ export default function App() {
             <div className="app-warning">{parseState.warning}</div>
           )}
           <div className="viewer">
-            <ViewTabs active={view} onChange={setView} />
+            <div className="viewer-topbar">
+              <ViewTabs active={view} onChange={setView} />
+              <ShareButton value={parseState.value} />
+            </div>
+            {sharedExpiry && (
+              <div className="app-shared-banner">
+                Shared snapshot · expires{" "}
+                {new Date(sharedExpiry).toLocaleDateString(undefined, {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </div>
+            )}
             {(view === "tree" || view === "table") && (
               <SearchBar query={query} onChange={setQuery} />
             )}

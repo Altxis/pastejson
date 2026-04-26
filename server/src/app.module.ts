@@ -1,17 +1,11 @@
 import { Module } from '@nestjs/common';
-import { ServeStaticModule } from '@nestjs/serve-static';
-import { join } from 'path';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { ShareModule } from './share/share.module';
 
+// Frontend is served by Vercel — this server is API-only.
 @Module({
-  imports: [
-    ServeStaticModule.forRoot({
-      rootPath: join(__dirname, '..', '..', 'client', 'dist'),
-      exclude: ['/api/(.*)'],
-      serveStaticOptions: { fallthrough: true },
-    }),
-  ],
+  imports: [ShareModule],
   controllers: [AppController],
   providers: [AppService],
 })

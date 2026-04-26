@@ -1,0 +1,121 @@
+.share-button {
+  position: relative;
+}
+
+.share-button__trigger {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s;
+  white-space: nowrap;
+}
+
+.share-button__trigger:hover:not(:disabled) {
+  background: var(--hover);
+  border-color: var(--text);
+  opacity: 0.8;
+}
+
+.share-button__trigger:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.share-button__trigger svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Spinner for loading state */
+.share-button__spinner {
+  display: inline-block;
+  width: 13px;
+  height: 13px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: share-spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+@keyframes share-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Popup ──────────────────────────────────────────────────────────────── */
+.share-popup {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  min-width: 340px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.share-popup__row {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.share-popup__url {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--code-bg);
+  color: var(--text);
+  font-family: var(--mono);
+  font-size: 12px;
+  outline: none;
+}
+
+.share-popup__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 7px;
+  font-size: 11px;
+  color: var(--text);
+  opacity: 0.5;
+}
+
+.share-popup__close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  color: var(--text);
+  opacity: 0.5;
+  padding: 0 2px;
+  font-family: inherit;
+}
+
+.share-popup__close:hover {
+  opacity: 1;
+}
+
+.share-popup--error {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  color: #ef4444;
+  font-size: 12px;
+  min-width: 240px;
+}

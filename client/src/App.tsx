@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { flushSync } from "react-dom";
-import JsonInput from "./components/JsonInput";
+import JsonInput, { type JsonInputHandle } from "./components/JsonInput";
 import ViewTabs from "./components/ViewTabs";
 import SearchBar from "./components/SearchBar";
 import ShareButton from "./components/ShareButton";
@@ -33,6 +33,7 @@ export default function App() {
   const [sharedExpiry, setSharedExpiry] = useState<string | null>(null);
   const workerRef = useRef<Worker | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const jsonInputRef = useRef<JsonInputHandle>(null);
 
   // ── Load shared snapshot from /s/:id URL on mount ────────────────────────
   useEffect(() => {
@@ -48,6 +49,7 @@ export default function App() {
       })
       .then(({ raw, expiresAt }) => {
         setSharedExpiry(expiresAt);
+        jsonInputRef.current?.setValue(raw);
         handleFile(raw, raw.length);
       })
       .catch((e: Error) => {
@@ -218,6 +220,7 @@ export default function App() {
         </p>
       </header>
       <JsonInput
+        ref={jsonInputRef}
         onType={handleType}
         onFile={handleFile}
         onReadStart={handleReadStart}

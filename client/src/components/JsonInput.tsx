@@ -1,6 +1,10 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, forwardRef, useImperativeHandle } from "react";
 import type { DragEvent, ChangeEvent } from "react";
 import "./JsonInput.css";
+
+export interface JsonInputHandle {
+  setValue: (raw: string) => void;
+}
 
 // Initial chars shown in the textarea for large files.
 const TEXTAREA_PREVIEW = 10_000;
@@ -19,12 +23,30 @@ interface Props {
   onReadError: (message: string) => void;
 }
 
-export default function JsonInput({ onType, onFile, onReadStart, onReadError }: Props) {
+const JsonInput = forwardRef<JsonInputHandle, Props>(function JsonInput(
+  { onType, onFile, onReadStart, onReadError }: Props,
+  ref,
+) {
   const [dragActive, setDragActive] = useState(false);
   const [fileMeta, setFileMeta] = useState<FileMeta | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const rawRef = useRef<string>("");
+
+  useImperativeHandle(ref, () => ({
+    setValue(raw: string) {
+      rawRef.current = raw;
+      if (textareaRef.current) {
+        if (raw.length > TEXTAREA_PREVIEW) {
+          textareaRef.current.value = raw.slice(0, TEXTAREA_PREVIEW);
+          setFileMeta({ total: raw.length, displayed: TEXTAREA_PREVIEW });
+        } else {
+          textareaRef.current.value = raw;
+          setFileMeta(null);
+        }
+      }
+    },
+  }));
 
   function handleChange(e: ChangeEvent<HTMLTextAreaElement>) {
     setFileMeta(null);
@@ -151,4 +173,6 @@ export default function JsonInput({ onType, onFile, onReadStart, onReadError }: 
       </div>
     </div>
   );
-}
+});
+
+export default JsonInput;

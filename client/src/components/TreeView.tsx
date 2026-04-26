@@ -1,10 +1,11 @@
-import { useState, useMemo } from "react";
+import React, { useState, useMemo } from "react";
 import { buildSearchIndex, type SearchIndex } from "../utils/search";
 import "./TreeView.css";
 
 const MAX_VISIBLE_CHILDREN = 100;
 const LOAD_CHUNK = 100;
 const SHOW_ALL_WARN_THRESHOLD = 500;
+const MAX_INJECTED_MATCHES = 20; // max search-injected entries shown per node
 
 interface TreeNodeProps {
   value: unknown;
@@ -89,19 +90,76 @@ function TreeNode({ value, keyName, depth, path, search }: TreeNodeProps) {
   const hasDescendantMatch = search !== null && search.ancestorPaths.has(path);
   const effectiveCollapsed = hasDescendantMatch ? false : collapsed;
 
-  const visible = useMemo<[string, unknown][]>(() => {
+  // isInjected = true for entries that appear only because of a search match
+  // beyond shownCount. Normal entries come first, then the load-more button,
+  // then the injected group — so the button sits in its natural position.
+  type VisibleEntry = { key: string; value: unknown; gapBefore: number; isInjected: boolean };
+
+  const visible = useMemo<VisibleEntry[]>(() => {
     if (!isCollapsible || effectiveCollapsed) return [];
+
+    const isSearchActive = !!(search?.query);
+
     if (isArray) {
       const arr = value as unknown[];
-      const result: [string, unknown][] = new Array(shownCount);
-      for (let i = 0; i < shownCount; i++) result[i] = [String(i), arr[i]];
+      if (isSearchActive) {
+        const result: VisibleEntry[] = [];
+        let prevIndex = -1;
+        for (let i = 0; i < arr.length; i++) {
+          const childPath = path ? `${path}.${i}` : String(i);
+          const isNormal = i < shownCount;
+          const isMatch =
+            search!.matchedPaths.has(childPath) || search!.ancestorPaths.has(childPath);
+          if (isNormal || isMatch) {
+            result.push({
+              key: String(i),
+              value: arr[i],
+              gapBefore: i - prevIndex - 1,
+              isInjected: !isNormal,
+            });
+            prevIndex = i;
+          }
+        }
+        return result;
+      }
+      return Array.from({ length: shownCount }, (_, i) => ({
+        key: String(i),
+        value: (value as unknown[])[i],
+        gapBefore: 0,
+        isInjected: false,
+      }));
+    }
+
+    const allEntries = Object.entries(value as Record<string, unknown>);
+    if (isSearchActive) {
+      const result: VisibleEntry[] = [];
+      let prevOrigIndex = -1;
+      allEntries.forEach(([k, v], origIndex) => {
+        const childPath = path ? `${path}.${k}` : k;
+        const isNormal = origIndex < shownCount;
+        const isMatch =
+          search!.matchedPaths.has(childPath) || search!.ancestorPaths.has(childPath);
+        if (isNormal || isMatch) {
+          result.push({
+            key: k,
+            value: v,
+            gapBefore: origIndex - prevOrigIndex - 1,
+            isInjected: !isNormal,
+          });
+          prevOrigIndex = origIndex;
+        }
+      });
       return result;
     }
-    const allEntries = Object.entries(value as Record<string, unknown>);
-    return shownCount < allEntries.length ? allEntries.slice(0, shownCount) : allEntries;
-  }, [value, isCollapsible, isArray, effectiveCollapsed, shownCount]);
+    return (shownCount < allEntries.length ? allEntries.slice(0, shownCount) : allEntries)
+      .map(([k, v]) => ({ key: k, value: v, gapBefore: 0, isInjected: false }));
+  }, [value, isCollapsible, isArray, effectiveCollapsed, shownCount, search, path]);
 
+  // hidden = items not yet in the normal paginated window (injected matches don't count)
   const hidden = childCount - shownCount;
+
+  const normalEntries = visible.filter((e) => !e.isInjected);
+  const injectedEntries = visible.filter((e) => e.isInjected);
   const nodeStyle = { "--depth": depth } as React.CSSProperties;
   const query = search?.query ?? "";
 
@@ -176,7 +234,8 @@ function TreeNode({ value, keyName, depth, path, search }: TreeNodeProps) {
       {!effectiveCollapsed && (
         <>
           <div className="tree-node__children">
-            {visible.map(([k, v]) => (
+            {/* Normal paginated entries */}
+            {normalEntries.map(({ key: k, value: v }) => (
               <TreeNode
                 key={k}
                 value={v}
@@ -186,6 +245,8 @@ function TreeNode({ value, keyName, depth, path, search }: TreeNodeProps) {
                 search={search}
               />
             ))}
+
+            {/* Load-more button sits right after the normal entries */}
             {hidden > 0 && (
               <div
                 className="tree-node__load-more"
@@ -221,6 +282,35 @@ function TreeNode({ value, keyName, depth, path, search }: TreeNodeProps) {
                 <span className="tree-node__hidden-count">
                   {" "}({hidden.toLocaleString()} hidden)
                 </span>
+              </div>
+            )}
+
+            {/* Injected search matches beyond shownCount, capped to avoid flooding */}
+            {injectedEntries.slice(0, MAX_INJECTED_MATCHES).map(({ key: k, value: v, gapBefore }) => (
+              <React.Fragment key={k}>
+                {gapBefore > 0 && (
+                  <div
+                    className="tree-node__gap"
+                    style={{ "--depth": depth + 1 } as React.CSSProperties}
+                  >
+                    ··· {gapBefore.toLocaleString()} item{gapBefore !== 1 ? "s" : ""} ···
+                  </div>
+                )}
+                <TreeNode
+                  value={v}
+                  keyName={isArray ? undefined : k}
+                  depth={depth + 1}
+                  path={path ? `${path}.${k}` : k}
+                  search={search}
+                />
+              </React.Fragment>
+            ))}
+            {injectedEntries.length > MAX_INJECTED_MATCHES && (
+              <div
+                className="tree-node__gap"
+                style={{ "--depth": depth + 1 } as React.CSSProperties}
+              >
+                ··· {(injectedEntries.length - MAX_INJECTED_MATCHES).toLocaleString()} more match{injectedEntries.length - MAX_INJECTED_MATCHES !== 1 ? "es" : ""} not shown ···
               </div>
             )}
           </div>

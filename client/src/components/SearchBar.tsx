@@ -51,7 +51,11 @@ export default function SearchBar({ query, onChange, matchCount }: Props) {
       />
       {showCount && (
         <span className="search-bar__count">
-          {matchCount === 0 ? "no matches" : `${matchCount!.toLocaleString()} match${matchCount === 1 ? "" : "es"}`}
+          {matchCount === 0
+            ? "no matches"
+            : matchCount! > 999
+              ? "1,000+ matches"
+              : `${matchCount!.toLocaleString()} match${matchCount === 1 ? "" : "es"}`}
         </span>
       )}
       {local && (

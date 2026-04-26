@@ -216,7 +216,9 @@ export default function App() {
           )}
           <div className="viewer">
             <ViewTabs active={view} onChange={setView} />
-            <SearchBar query={query} onChange={setQuery} />
+            {(view === "tree" || view === "table") && (
+              <SearchBar query={query} onChange={setQuery} />
+            )}
             <div className="view-content" key={view}>
               {view === "tree" && <TreeView value={parseState.value} query={query} />}
               {view === "table" && <TableView value={parseState.value} query={query} />}

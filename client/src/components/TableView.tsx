@@ -5,6 +5,7 @@ import "./TableView.css";
 
 const ROW_H = 36;
 const OVERSCAN = 10;
+const MAX_FILTERED_ROWS = 2000; // cap search results to keep the table snappy
 
 interface Props {
   value: unknown;
@@ -38,14 +39,19 @@ export default function TableView({ value, query }: Props) {
 
   const rows = useMemo(() => flatten(value), [value]);
 
-  // Filter by path OR value — both benefit from the global search query
-  const filtered = useMemo(() => {
+  // Filter by path OR value. Cap at MAX_FILTERED_ROWS and keep the total for
+  // the "showing first N of M" label.
+  const { filtered, totalMatchCount } = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter(([path, val]) => {
+    if (!q) return { filtered: rows, totalMatchCount: rows.length };
+    const all = rows.filter(([path, val]) => {
       const valStr = val === null ? "null" : String(val);
       return path.toLowerCase().includes(q) || valStr.toLowerCase().includes(q);
     });
+    return {
+      filtered: all.length > MAX_FILTERED_ROWS ? all.slice(0, MAX_FILTERED_ROWS) : all,
+      totalMatchCount: all.length,
+    };
   }, [rows, query]);
 
   const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
@@ -61,8 +67,11 @@ export default function TableView({ value, query }: Props) {
   const topH = startIndex * ROW_H;
   const bottomH = (filtered.length - endIndex) * ROW_H;
 
+  const isCapped = query.trim() && totalMatchCount > MAX_FILTERED_ROWS;
   const showCount = query.trim()
-    ? `${filtered.length.toLocaleString()} of ${rows.length.toLocaleString()} rows`
+    ? isCapped
+      ? `showing first ${MAX_FILTERED_ROWS.toLocaleString()} of ${totalMatchCount.toLocaleString()} matches`
+      : `${filtered.length.toLocaleString()} of ${rows.length.toLocaleString()} rows`
     : `${rows.length.toLocaleString()} rows`;
 
   return (

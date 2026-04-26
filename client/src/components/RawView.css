@@ -29,8 +29,18 @@
   tab-size: 2;
 }
 
-.raw-view__truncated {
-  color: var(--json-bool);
-  opacity: 0.7;
-  font-style: italic;
+/* Virtual-scroll container for large files */
+.raw-view__scroll {
+  height: 70vh;
+  overflow: auto;
+}
+
+/* The pre inside the virtual scroll is absolutely positioned */
+.raw-view__pre--virtual {
+  position: absolute;
+  left: 0;
+  right: 0;
+  margin: 0;
+  max-height: none;
+  overflow: visible;
 }

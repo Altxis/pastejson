@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import type { DragEvent, ChangeEvent } from "react";
 import "./JsonInput.css";
 
@@ -31,11 +31,13 @@ export default function JsonInput({ onType, onFile, onReadStart, onReadError }: 
     onType(e.target.value);
   }
 
+  function handleTextareaScroll(e: React.UIEvent<HTMLTextAreaElement>) {
+    const ta = e.currentTarget;
+    const nearBottom = ta.scrollHeight - ta.scrollTop - ta.clientHeight < 120;
+    if (nearBottom && canLoadMore) handleLoadMoreEditor();
+  }
+
   function loadFile(file: File) {
-    // Chrome tabs have a ~512 MB–1 GB JS heap limit. FileReader.readAsText loads
-    // the entire file into a string, then JSON.parse creates a second copy as the
-    // parsed object — so a 500 MB file can easily consume 1+ GB and crash the tab.
-    // Warn the user rather than silently OOM-crashing.
     const MAX_SAFE_BYTES = 500 * 1024 * 1024; // 500 MB
     if (file.size > MAX_SAFE_BYTES) {
       const sizeMB = (file.size / 1024 / 1024).toFixed(0);
@@ -47,9 +49,6 @@ export default function JsonInput({ onType, onFile, onReadStart, onReadError }: 
       return;
     }
 
-    // Signal immediately — before any async I/O — so the UI can show feedback
-    // right away. FileReader.readAsText for a 200+ MB file takes 5–10 s and
-    // gives no progress events by default; without this the user sees nothing.
     onReadStart(file.name, file.size);
 
     const reader = new FileReader();
@@ -99,7 +98,6 @@ export default function JsonInput({ onType, onFile, onReadStart, onReadError }: 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (file) loadFile(file);
-    // Reset so the same file can be re-selected after clearing
     e.target.value = "";
   }
 
@@ -108,9 +106,9 @@ export default function JsonInput({ onType, onFile, onReadStart, onReadError }: 
     fileMeta.displayed < fileMeta.total &&
     fileMeta.displayed < TEXTAREA_MAX;
 
-  const remaining = fileMeta
-    ? Math.min(fileMeta.total, TEXTAREA_MAX) - fileMeta.displayed
-    : 0;
+  const hint = fileMeta
+    ? `Large file — editor shows first ${(fileMeta.displayed / 1024).toFixed(0)} KB, use tabs below for full view`
+    : "or drop a .json file anywhere above";
 
   return (
     <div
@@ -121,13 +119,11 @@ export default function JsonInput({ onType, onFile, onReadStart, onReadError }: 
       onDragLeave={() => setDragActive(false)}
       onDrop={handleDrop}
     >
-      {/* Uncontrolled textarea. Also handles drag/drop directly because browsers
-          treat textareas as native drop targets and consume the events before
-          they bubble — without this, dropping on the textarea silently fails. */}
       <textarea
         ref={textareaRef}
         className="json-input__textarea"
         onChange={handleChange}
+        onScroll={handleTextareaScroll}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDrop}
         placeholder={'Paste JSON here…\n\n{\n  "name": "Alice",\n  "age": 30\n}'}
@@ -137,25 +133,7 @@ export default function JsonInput({ onType, onFile, onReadStart, onReadError }: 
         autoCapitalize="off"
       />
       <div className="json-input__toolbar">
-        {canLoadMore ? (
-          <button
-            className="json-input__load-more-btn"
-            onClick={handleLoadMoreEditor}
-            type="button"
-          >
-            Load {Math.min(TEXTAREA_CHUNK, remaining).toLocaleString()} more chars in editor
-            <span className="json-input__load-more-meta">
-              ({((fileMeta!.total - fileMeta!.displayed) / 1024).toFixed(0)} KB remaining
-              {fileMeta!.displayed >= TEXTAREA_MAX ? " — editor limit reached" : ""})
-            </span>
-          </button>
-        ) : (
-          <span className="json-input__hint">
-            {fileMeta
-              ? `${(fileMeta.total / 1024).toFixed(0)} KB file — editor limit reached, use tabs below`
-              : "or drop a .json file anywhere above"}
-          </span>
-        )}
+        <span className="json-input__hint">{hint}</span>
         <input
           type="file"
           accept=".json,application/json,text/plain"
